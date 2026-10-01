@@ -151,6 +151,7 @@ textarea { resize: vertical; min-height: 4.5em; }
         <div class="field"><label for="r-format">What are you making?</label><select id="r-format"></select></div>
         <div class="field"><label for="r-length">Video length</label><select id="r-length"></select></div>
         <div class="field" style="grid-column: 1 / -1"><label for="r-usage">How will the brand use it?</label><select id="r-usage"></select></div>
+        <div class="field" id="f-months" hidden><label for="r-months">How many months of paid ads? (1 to 60)</label><input id="r-months" type="number" inputmode="numeric" min="1" max="60" value="4"></div>
         <div class="field"><label for="r-qty">How many videos?</label><input id="r-qty" type="number" inputmode="numeric" min="1" max="50" value="1"></div>
         <div class="field"><label for="r-rev">Extra revisions (1 is free)</label><input id="r-rev" type="number" inputmode="numeric" min="0" max="10" value="0"></div>
       </div>
@@ -281,8 +282,19 @@ const USAGE = [
   { id: 'ad90', label: 'Used in paid ads for 3 months', short: 'paid ads for 3 months', m: 2 },
   { id: 'ad180', label: 'Used in paid ads for 6 months', short: 'paid ads for 6 months', m: 2.8 },
   { id: 'ad365', label: 'Used in paid ads for 12 months', short: 'paid ads for 12 months', m: 3.8 },
-  { id: 'all', label: 'Unlimited use, no end date', short: 'unlimited use', m: 5 }
+  { id: 'all', label: 'Unlimited use, no end date', short: 'unlimited use', m: 5 },
+  { id: 'custom', label: 'Custom period (type the months)', short: 'paid ads', m: 2 }
 ];
+const AD_POINTS = [[1, 1.5], [3, 2], [6, 2.8], [12, 3.8]];
+function monthsMultiplier(mo) {
+  mo = Math.max(1, Math.min(60, mo || 1));
+  if (mo >= 12) return Math.min(5, Math.round((3.8 + (mo - 12) * 0.1) * 100) / 100);
+  for (let i = 1; i < AD_POINTS.length; i++) {
+    const a = AD_POINTS[i - 1], b = AD_POINTS[i];
+    if (mo <= b[0]) return Math.round((a[1] + (b[1] - a[1]) * (mo - a[0]) / (b[0] - a[0])) * 100) / 100;
+  }
+  return 5;
+}
 const EXTRAS = [
   { id: 'x-raw', pct: 0.25, label: 'Raw footage' },
   { id: 'x-rush', pct: 0.25, label: 'Rush delivery' },
@@ -299,7 +311,12 @@ function calcRate(o) {
   const level = LEVELS.find(l => l.id === o.level) || LEVELS[0];
   const fmt = FORMATS.find(f => f.id === o.format) || FORMATS[0];
   const len = LENGTHS.find(l => l.id === o.length) || LENGTHS[1];
-  const use = USAGE.find(u => u.id === o.usage) || USAGE[0];
+  let use = USAGE.find(u => u.id === o.usage) || USAGE[0];
+  if (use.id === 'custom') {
+    const mo = Math.max(1, Math.min(60, Math.round(o.months) || 1));
+    const txt = mo + ' month' + (mo > 1 ? 's' : '');
+    use = { id: 'custom', m: monthsMultiplier(mo), short: 'paid ads for ' + txt, label: 'Used in paid ads for ' + txt + ' (custom)' };
+  }
   const base = o.base > 0 ? o.base : level.base;
   const lenM = fmt.timed ? len.m : 1;
   const one = base * fmt.m * lenM * use.m;
@@ -380,13 +397,14 @@ function rateInputs() {
   return {
     level: $('r-level').value, base: parseFloat($('r-base').value) || 0, format: $('r-format').value,
     length: $('r-length').value, usage: $('r-usage').value, qty: parseInt($('r-qty').value, 10) || 1,
-    rev: parseInt($('r-rev').value, 10) || 0, extras
+    rev: parseInt($('r-rev').value, 10) || 0, months: parseInt($('r-months').value, 10) || 1, extras
   };
 }
 function renderRate() {
   const inp = rateInputs();
   const r = lastRate = calcRate(inp);
   $('r-length').disabled = !r.fmt.timed;
+  $('f-months').hidden = $('r-usage').value !== 'custom';
   $('o-rec').textContent = inr(r.rec);
   $('o-sticky').textContent = inr(r.rec);
   $('o-range').textContent = 'Fair range ' + inr(r.low) + ' to ' + inr(r.high);
@@ -418,7 +436,7 @@ function quoteText(lang) {
 }
 function renderQuote() { if (!$('o-quote').hidden) $('o-quotetext').textContent = quoteText($('q-lang').value); }
 
-['r-base', 'r-format', 'r-length', 'r-usage', 'r-qty', 'r-rev'].forEach(id => { $(id).addEventListener('input', renderRate); $(id).addEventListener('change', renderRate); });
+['r-base', 'r-format', 'r-length', 'r-usage', 'r-months', 'r-qty', 'r-rev'].forEach(id => { $(id).addEventListener('input', renderRate); $(id).addEventListener('change', renderRate); });
 EXTRAS.forEach(x => $(x.id).addEventListener('change', renderRate));
 $('r-level').addEventListener('change', () => {
   const lv = LEVELS.find(l => l.id === $('r-level').value);
