@@ -113,6 +113,15 @@ textarea { resize: vertical; min-height: 4.5em; }
 .sheet .pay { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--sheet-line); font-size: 13px; line-height: 1.6; }
 .empty { color: var(--sheet-muted); font-style: italic; }
 .sec { margin-top: 4px; font-size: 13px; color: var(--muted); }
+
+@media print {
+  @page { size: A4; margin: 14mm; }
+  html, body { background: #fff !important; }
+  body { padding: 0 !important; }
+  header, .tabs, #p-rate, #p-me, .sticky, #fallback, #p-inv > .card, #p-inv > .btns, #p-inv > .status, #p-inv > .hint { display: none !important; }
+  #p-inv { display: block !important; }
+  .sheet { box-shadow: none !important; border: 0 !important; padding: 0 !important; }
+}
 </style>
 
 
@@ -208,10 +217,11 @@ textarea { resize: vertical; min-height: 4.5em; }
 
     <div class="btns">
       <button type="button" class="btn main" id="b-copyinv">Copy invoice as text</button>
+      <button type="button" class="btn" id="b-pdf">Download PDF</button>
       <button type="button" class="btn" id="b-newinv">Start next invoice</button>
     </div>
     <p class="status" id="s-inv" role="status"></p>
-    <p class="hint">Copy the text and paste it into WhatsApp or email. To keep a picture, take a screenshot of the invoice above.</p>
+    <p class="hint">Copy the text and paste it into WhatsApp or email. Download PDF opens your print window. Choose \u201cSave as PDF\u201d there (on Android it may say \u201cSave to Drive\u201d or \u201cDownload as PDF\u201d).</p>
   </section>
 
   <!-- ===================== MY DETAILS ===================== -->
@@ -246,9 +256,9 @@ textarea { resize: vertical; min-height: 4.5em; }
 <script>
 /* ---------- data ---------- */
 const LEVELS = [
-  { id: 'new', label: 'Just starting (0 to 5 brand deals)', base: 2000 },
-  { id: 'mid', label: 'Growing (5 to 25 brand deals)', base: 5000 },
-  { id: 'pro', label: 'Experienced (25+ brand deals)', base: 12000 }
+  { id: 'new', label: 'Just starting (0 to 5 deals)', base: 2000 },
+  { id: 'mid', label: 'Growing (5 to 25 deals)', base: 5000 },
+  { id: 'pro', label: 'Experienced (25+ deals)', base: 12000 }
 ];
 const FORMATS = [
   { id: 'reel', label: 'Reel or Short video', m: 1, timed: true },
@@ -543,6 +553,16 @@ $('b-newinv').addEventListener('click', () => {
   $('s-inv').textContent = 'Ready for the next brand. Invoice number moved to ' + $('i-no').value + '.';
 });
 $('b-toinv').addEventListener('click', () => { seedItems(); renderItems(); showTab('inv'); $('s-inv').textContent = 'Your quote is on the invoice. Add the brand name and check the lines.'; });
+
+
+$('b-pdf').addEventListener('click', () => {
+  const m = invoiceModel();
+  const old = document.title;
+  document.title = (m.no + (m.client ? ' - ' + m.client : '')).replace(/[\\/:*?"<>|]/g, '');
+  const restore = () => { document.title = old; window.removeEventListener('afterprint', restore); };
+  window.addEventListener('afterprint', restore);
+  window.print();
+});
 
 /* ---------- start ---------- */
 renderRate(); seedItems(); renderItems(); renderInvoice();
