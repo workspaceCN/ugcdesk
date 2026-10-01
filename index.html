@@ -116,10 +116,10 @@ textarea { resize: vertical; min-height: 4.5em; }
 .empty { color: var(--sheet-muted); font-style: italic; }
 .sec { margin-top: 4px; font-size: 13px; color: var(--muted); }
 
+@page { size: A4; margin: 0; }
 @media print {
-  @page { size: A4; margin: 14mm; }
   html, body { background: #fff !important; }
-  body { padding: 0 !important; }
+  body { padding: 14mm !important; }
   header, .tabs, #p-rate, #p-me, .sticky, #fallback, #p-inv > .card, #p-inv > .btns, #p-inv > .status, #p-inv > .hint { display: none !important; }
   #p-inv { display: block !important; }
   .sheet { box-shadow: none !important; border: 0 !important; padding: 0 !important; }
