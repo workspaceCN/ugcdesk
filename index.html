@@ -55,7 +55,7 @@ h1 em { font-style: normal; background: var(--accent); color: var(--on-accent); 
 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
 .card h2 { font: 700 1.05rem/1.2 var(--display); margin: 0 0 12px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; align-items: end; }
 .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .field label, .lbl { font-size: 13px; font-weight: 600; color: var(--muted); }
 input[type="text"], input[type="number"], input[type="date"], input[type="email"], input[type="tel"], select, textarea {
@@ -99,7 +99,9 @@ textarea { resize: vertical; min-height: 4.5em; }
 .sheet { background: var(--sheet); color: var(--sheet-ink); border-radius: 6px; padding: 22px 20px; border: 1px solid var(--sheet-line); box-shadow: 0 6px 24px rgba(10, 17, 30, .12); overflow-wrap: anywhere; }
 .sheet h3 { font: 800 1.6rem/1 var(--display); margin: 0; letter-spacing: .02em; }
 .sheet .top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid var(--sheet-ink); padding-bottom: 12px; margin-bottom: 14px; }
-.sheet .meta { font: 500 13px/1.6 var(--mono); text-align: right; color: var(--sheet-muted); }
+.sheet .meta { display: grid; grid-template-columns: auto auto; gap: 3px 16px; margin: 0; align-content: start; font: 500 13px/1.5 var(--mono); }
+.sheet .meta dt { color: var(--sheet-muted); text-align: left; }
+.sheet .meta dd { margin: 0; text-align: right; color: var(--sheet-ink); font-variant-numeric: tabular-nums; }
 .sheet .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 14px; }
 .sheet .k { font: 700 11px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--sheet-muted); margin-bottom: 5px; }
 .sheet p { margin: 0; font-size: 14px; }
@@ -206,7 +208,7 @@ textarea { resize: vertical; min-height: 4.5em; }
       <div class="items" id="i-items"></div>
       <div class="btns"><button type="button" class="btn small" id="b-additem">+ Add another line</button></div>
       <div class="grid" style="margin-top:14px">
-        <div class="field"><label for="i-gst">GST (choose 0% if you are not registered)</label>
+        <div class="field"><label for="i-gst">GST rate (0% if not registered)</label>
           <select id="i-gst"><option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option></select></div>
         <div class="field"><label for="i-adv">Advance already received (₹)</label><input id="i-adv" type="number" inputmode="numeric" min="0" value="0"></div>
         <div class="field" style="grid-column: 1 / -1"><label for="i-notes">Notes</label><textarea id="i-notes">Payment due within 7 days of the invoice date. Thank you for working with me!</textarea></div>
@@ -498,7 +500,7 @@ function invoiceModel() {
 function renderInvoice() {
   const m = invoiceModel(); const me = m.me;
   const ph = (v, t) => v ? esc(v) : '<span class="empty">' + t + '</span>';
-  const fromLines = [ph(me.name, 'Your name (add it in My details)'), esc([me.city].filter(Boolean).join('')), esc([me.phone, me.email].filter(Boolean).join(' · ')),
+  const fromLines = [ph(me.name, 'Your name (add it in My details)'), esc([me.city].filter(Boolean).join('')), esc(me.phone || ''), esc(me.email || ''),
     me.pan ? 'PAN ' + esc(me.pan) : '', me.gstin ? 'GSTIN ' + esc(me.gstin) : ''].filter(Boolean).join('<br>');
   const toLines = [ph(m.client, 'Brand name'), esc(m.contact), esc(m.addr)].filter(Boolean).join('<br>');
   const rows = items.map((it, i) => {
@@ -509,7 +511,7 @@ function renderInvoice() {
   if (me.upi) pay.push('UPI: <b>' + esc(me.upi) + '</b>');
   if (me.acc) pay.push('Bank: ' + esc([me.holder, me.bank].filter(Boolean).join(', ')) + '<br>A/C ' + esc(me.acc) + (me.ifsc ? ' · IFSC ' + esc(me.ifsc) : ''));
   $('sheet').innerHTML =
-    '<div class="top"><div><h3>INVOICE</h3></div><div class="meta">' + esc(m.no) + '<br>Date ' + esc(fmtDate(m.date)) + '<br>Due ' + esc(fmtDate(m.due)) + '</div></div>' +
+    '<div class="top"><div><h3>INVOICE</h3></div><dl class="meta"><dt>Invoice no.</dt><dd>' + esc(m.no) + '</dd><dt>Date</dt><dd>' + esc(fmtDate(m.date)) + '</dd><dt>Due</dt><dd>' + esc(fmtDate(m.due)) + '</dd></dl></div>' +
     '<div class="two"><div><div class="k">From</div><p>' + fromLines + '</p></div><div><div class="k">Billed to</div><p>' + toLines + '</p></div></div>' +
     '<table><thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead><tbody>' + rows + '</tbody></table>' +
     '<table class="tot" style="margin-top:8px"><tbody>' +
